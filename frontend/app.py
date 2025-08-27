@@ -5,7 +5,7 @@ import requests
 BACKEND_URL = "http://localhost:8000/analyze"
 
 # ---- PAGE CONFIG ----
-st.set_page_config(page_title="Tweet Sentiment Analyzer", page_icon="🐦", layout="centered")
+st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="centered")
 
 # ---- CUSTOM DARK THEME CSS ----
 st.markdown(
@@ -81,14 +81,14 @@ st.markdown(
 )
 
 # ---- APP HEADER ----
-st.markdown('<div class="title">🐦 Tweet Sentiment Analyzer</div>', unsafe_allow_html=True)
+st.markdown('<div class="title">Tweet Sentiment Analyzer</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Analyze the sentiment of any tweet in real-time with our AI-powered backend</div>', unsafe_allow_html=True)
 
 # ---- INPUT ----
-tweet_text = st.text_area("✍️ Enter your tweet:", "", height=120, placeholder="e.g., Dark mode looks amazing 😍")
+tweet_text = st.text_area("Enter your tweet:", "", height=120, placeholder="e.g., Dark mode looks amazing")
 
 # ---- ANALYZE BUTTON ----
-if st.button("🔍 Analyze Sentiment", use_container_width=True):
+if st.button("Analyze Sentiment", use_container_width=True):
     if tweet_text.strip():
         try:
             response = requests.post(BACKEND_URL, json={"text": tweet_text})
@@ -107,7 +107,7 @@ if st.button("🔍 Analyze Sentiment", use_container_width=True):
                 # ---- RESULT CARD ----
                 st.markdown(f"""
                 <div class="card">
-                    <h3>✅ Analysis Result</h3>
+                    <h3>Analysis Result</h3>
                     <p>Sentiment: <span class="{sentiment_class}">{sentiment}</span></p>
                     <p>Compound Score: <b>{compound:.2f}</b></p>
                 </div>
@@ -117,9 +117,9 @@ if st.button("🔍 Analyze Sentiment", use_container_width=True):
                 st.progress(min(max((compound + 1) / 2, 0), 1))
 
             else:
-                st.error(f"⚠️ Backend error: {response.status_code} - {response.text}")
+                st.error(f"Backend error: {response.status_code} - {response.text}")
 
         except Exception as e:
-            st.error(f"❌ Could not connect to backend: {e}")
+            st.error(f"Could not connect to backend: {e}")
     else:
-        st.warning("⚠️ Please enter some text before analyzing.")
+        st.warning("Please enter some text before analyzing.")
