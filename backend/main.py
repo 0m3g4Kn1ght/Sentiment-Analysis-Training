@@ -1,4 +1,3 @@
-# backend/main.py
 from fastapi import FastAPI
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from models import Tweet

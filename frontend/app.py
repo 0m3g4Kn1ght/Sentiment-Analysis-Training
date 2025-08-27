@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Backend API URL (Docker Compose networking will resolve "backend" as hostname)
-BACKEND_URL = "http://backend:8000/analyze"
+BACKEND_URL = "http://localhost:8000/analyze"
 
 # ---- PAGE CONFIG ----
 st.set_page_config(page_title="Tweet Sentiment Analyzer", page_icon="🐦", layout="centered")
