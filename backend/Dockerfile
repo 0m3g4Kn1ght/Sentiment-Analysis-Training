@@ -10,14 +10,19 @@ WORKDIR /app
 # Install only minimal dependencies (no need for heavy LAPACK/Fortran if not required)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    gcc \
+    libffi-dev \
+    libssl-dev \
     libpq-dev \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Copy requirements and install
 COPY backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir numpy scipy \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source
 COPY backend/ .
