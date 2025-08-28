@@ -40,7 +40,7 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
-          pytest -q
+          pytest -v
 
   # --- Optional: build & push Docker images to Docker Hub on main only ---
   docker:
