@@ -1,27 +1,36 @@
 # frontend/Dockerfile
-FROM python:latest
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install system dependencies (needed by pandas & streamlit)
+# Install system dependencies required for pandas + streamlit
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6 \
+    gcc \
+    libffi-dev \
+    libssl-dev \
+    libpq-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libsqlite3-dev \
+    zlib1g-dev \
+    curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements and install Python packages
 COPY frontend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
 
+# Copy source code
 COPY . .
 
 EXPOSE 8501
 
-# Streamlit needs to run from the folder where app.py is
+# Run from frontend folder
 WORKDIR /app/frontend
 CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
