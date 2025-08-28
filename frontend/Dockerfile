@@ -6,21 +6,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies needed for common pyproject.toml builds
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    gfortran \
-    libblas-dev \
-    liblapack-dev \
-    libatlas-base-dev \
-    libffi-dev \
-    libssl-dev \
-    libpq-dev \
-    zlib1g-dev \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# # Install system dependencies needed for common pyproject.toml builds
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     build-essential \
+#     gcc \
+#     gfortran \
+#     libblas-dev \
+#     liblapack-dev \
+#     libatlas-base-dev \
+#     libffi-dev \
+#     libssl-dev \
+#     libpq-dev \
+#     zlib1g-dev \
+#     curl \
+#     git \
+#     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for caching
 COPY backend/requirements.txt ./requirements.txt

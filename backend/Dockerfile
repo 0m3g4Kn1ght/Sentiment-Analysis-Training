@@ -7,16 +7,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Set working directory
 WORKDIR /app
 
-# Install only minimal dependencies (no need for heavy LAPACK/Fortran if not required)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    libffi-dev \
-    libssl-dev \
-    libpq-dev \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# # Install only minimal dependencies (no need for heavy LAPACK/Fortran if not required)
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     build-essential \
+#     gcc \
+#     libffi-dev \
+#     libssl-dev \
+#     libpq-dev \
+#     curl \
+#     git \
+#     && rm -rf /var/lib/apt/lists/*
 
 
 # Copy requirements and install
