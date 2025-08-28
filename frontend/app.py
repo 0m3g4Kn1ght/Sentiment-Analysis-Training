@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # Backend API base URL
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://backend:8000"
 
 # ---- PAGE CONFIG ----
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="centered")
