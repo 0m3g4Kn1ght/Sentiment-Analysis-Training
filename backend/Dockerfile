@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
-COPY requirements.txt ./backend/requirements.txt
-RUN pip install --no-cache-dir -r ./backend/requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY . ./backend
+COPY . .
 
 # Expose FastAPI port
 EXPOSE 8000
