@@ -1,8 +1,9 @@
 import streamlit as st
 import requests
+import pandas as pd
 
-# Backend API URL (Docker Compose networking will resolve "backend" as hostname)
-BACKEND_URL = "http://localhost:8000/analyze"
+# Backend API base URL
+BASE_URL = "http://localhost:8000"
 
 # ---- PAGE CONFIG ----
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="centered")
@@ -80,46 +81,148 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---- APP HEADER ----
-st.markdown('<div class="title">Tweet Sentiment Analyzer</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Analyze the sentiment of any tweet in real-time with our AI-powered backend</div>', unsafe_allow_html=True)
+# ---- SESSION STATE ----
+if "account_id" not in st.session_state:
+    st.session_state.account_id = None
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False
+if "page" not in st.session_state:
+    st.session_state.page = "Login"
 
-# ---- INPUT ----
-tweet_text = st.text_area("Enter your tweet:", "", height=120, placeholder="e.g., Dark mode looks amazing")
 
-# ---- ANALYZE BUTTON ----
-if st.button("Analyze Sentiment", use_container_width=True):
-    if tweet_text.strip():
-        try:
-            response = requests.post(BACKEND_URL, json={"text": tweet_text})
+# ---- PAGE ROUTING ----
+def login_page():
+    st.markdown('<div class="title">Login</div>', unsafe_allow_html=True)
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
-            if response.status_code == 200:
-                result = response.json()
-                sentiment = result.get("sentiment", "Unknown").capitalize()
-                compound = result.get("scores", {}).get("compound", 0.0)
+    if st.button("Login", use_container_width=True):
+        resp = requests.post(f"{BASE_URL}/login", json={"username": username, "password": password})
+        if resp.status_code == 200:
+            data = resp.json()
+            st.session_state.account_id = data["account_id"]
+            st.session_state.page = "Analyze"
+            # check admin
+            try:
+                admin_check = requests.get(f"{BASE_URL}/admin/{st.session_state.account_id}")
+                st.session_state.is_admin = admin_check.status_code == 200
+            except:
+                st.session_state.is_admin = False
+            st.success("Login successful")
+        else:
+            st.error(resp.json().get("detail", "Login failed"))
 
-                sentiment_class = (
-                    "positive" if sentiment == "Positive"
-                    else "negative" if sentiment == "Negative"
-                    else "neutral"
-                )
+    if st.button("Go to Register", use_container_width=True):
+        st.session_state.page = "Register"
 
-                # ---- RESULT CARD ----
-                st.markdown(f"""
-                <div class="card">
-                    <h3>Analysis Result</h3>
-                    <p>Sentiment: <span class="{sentiment_class}">{sentiment}</span></p>
-                    <p>Compound Score: <b>{compound:.2f}</b></p>
-                </div>
-                """, unsafe_allow_html=True)
 
-                # Progress bar for sentiment intensity
-                st.progress(min(max((compound + 1) / 2, 0), 1))
+def register_page():
+    st.markdown('<div class="title">Register</div>', unsafe_allow_html=True)
+    username = st.text_input("New Username")
+    password = st.text_input("New Password", type="password")
 
+    if st.button("Register", use_container_width=True):
+        resp = requests.post(f"{BASE_URL}/register", json={"username": username, "password": password})
+        if resp.status_code == 200:
+            st.success("Registration successful. Please log in.")
+            st.session_state.page = "Login"
+        else:
+            st.error(resp.json().get("detail", "Registration failed"))
+
+    if st.button("Back to Login", use_container_width=True):
+        st.session_state.page = "Login"
+
+
+def analyze_page():
+    st.markdown('<div class="title">Tweet Sentiment Analyzer</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Analyze the sentiment of any tweet in real-time</div>', unsafe_allow_html=True)
+
+    tweet_text = st.text_area("Enter your tweet:", "", height=120, placeholder="e.g., Dark mode looks amazing")
+
+    if st.button("Analyze Sentiment", use_container_width=True):
+        if tweet_text.strip():
+            try:
+                resp = requests.post(f"{BASE_URL}/analyze", json={"account_id": st.session_state.account_id, "text": tweet_text})
+                if resp.status_code == 200:
+                    result = resp.json()
+                    sentiment = result.get("sentiment", "Unknown").capitalize()
+
+                    sentiment_class = (
+                        "positive" if sentiment == "Positive"
+                        else "negative" if sentiment == "Negative"
+                        else "neutral"
+                    )
+
+                    st.markdown(f"""
+                    <div class="card">
+                        <h3>Analysis Result</h3>
+                        <p>Sentiment: <span class="{sentiment_class}">{sentiment}</span></p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                else:
+                    st.error(f"Error: {resp.json().get('detail', 'Backend error')}")
+
+            except Exception as e:
+                st.error(f"Could not connect to backend: {e}")
+        else:
+            st.warning("Please enter some text before analyzing.")
+
+    if st.button("View History", use_container_width=True):
+        st.session_state.page = "History"
+    if st.session_state.is_admin and st.button("Admin Panel", use_container_width=True):
+        st.session_state.page = "Admin"
+    if st.button("Logout", use_container_width=True):
+        requests.post(f"{BASE_URL}/logout", params={"account_id": st.session_state.account_id})
+        st.session_state.account_id = None
+        st.session_state.page = "Login"
+
+
+def history_page():
+    st.markdown('<div class="title">History</div>', unsafe_allow_html=True)
+    try:
+        resp = requests.get(f"{BASE_URL}/history/{st.session_state.account_id}")
+        if resp.status_code == 200:
+            history = resp.json().get("history", [])
+            if history:
+                df = pd.DataFrame(history)
+                st.dataframe(df, use_container_width=True)
             else:
-                st.error(f"Backend error: {response.status_code} - {response.text}")
+                st.info("No history available.")
+        else:
+            st.error("Could not fetch history.")
+    except Exception as e:
+        st.error(f"Error fetching history: {e}")
 
-        except Exception as e:
-            st.error(f"Could not connect to backend: {e}")
-    else:
-        st.warning("Please enter some text before analyzing.")
+    if st.button("Back", use_container_width=True):
+        st.session_state.page = "Analyze"
+
+
+def admin_page():
+    st.markdown('<div class="title">Admin Panel</div>', unsafe_allow_html=True)
+    try:
+        resp = requests.get(f"{BASE_URL}/admin/{st.session_state.account_id}")
+        if resp.status_code == 200:
+            users = resp.json().get("users", [])
+            df = pd.DataFrame(users)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.error(resp.json().get("detail", "Not authorized"))
+    except Exception as e:
+        st.error(f"Error loading admin panel: {e}")
+
+    if st.button("Back", use_container_width=True):
+        st.session_state.page = "Analyze"
+
+
+# ---- MAIN ----
+if st.session_state.page == "Login":
+    login_page()
+elif st.session_state.page == "Register":
+    register_page()
+elif st.session_state.page == "Analyze":
+    analyze_page()
+elif st.session_state.page == "History":
+    history_page()
+elif st.session_state.page == "Admin":
+    admin_page()
