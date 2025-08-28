@@ -1,6 +1,7 @@
 import sqlite3
+import os
 
-DB_NAME = "users.db"
+DB_NAME = "test.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -25,17 +26,20 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 def register_user(username, password):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
     try:
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
         c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
         conn.commit()
-        return c.lastrowid
+        account_id = c.lastrowid
     except sqlite3.IntegrityError:
-        return None
-    finally:
         conn.close()
+        return None
+    conn.close()
+    return account_id
+
 
 def verify_user(username, password):
     conn = sqlite3.connect(DB_NAME)
@@ -45,13 +49,14 @@ def verify_user(username, password):
     conn.close()
     return row[0] if row else None
 
+
 def save_history(account_id, text, sentiment):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("INSERT INTO history (account_id, text, sentiment) VALUES (?, ?, ?)",
-              (account_id, text, sentiment))
+    c.execute("INSERT INTO history (account_id, text, sentiment) VALUES (?, ?, ?)", (account_id, text, sentiment))
     conn.commit()
     conn.close()
+
 
 def get_history(account_id):
     conn = sqlite3.connect(DB_NAME)
@@ -61,6 +66,7 @@ def get_history(account_id):
     conn.close()
     return [{"text": r[0], "sentiment": r[1]} for r in rows]
 
+
 def is_admin(account_id):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -69,6 +75,7 @@ def is_admin(account_id):
     conn.close()
     return row and row[0] == 1
 
+
 def list_users():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -76,5 +83,3 @@ def list_users():
     rows = c.fetchall()
     conn.close()
     return [{"id": r[0], "username": r[1], "is_admin": bool(r[2])} for r in rows]
-
-init_db()

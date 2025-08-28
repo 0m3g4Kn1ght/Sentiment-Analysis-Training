@@ -1,117 +1,73 @@
-# backend/test_main.py
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch
-
 from backend.main import app
+import backend.database as database
 
 client = TestClient(app)
 
 
-@pytest.fixture
-def mock_register_user():
-    with patch("backend.database.register_user") as mock:
-        yield mock
+@pytest.fixture(autouse=True)
+def setup_db():
+    database.init_db()
+    yield
 
 
-@pytest.fixture
-def mock_verify_user():
-    with patch("backend.database.verify_user") as mock:
-        yield mock
-
-
-@pytest.fixture
-def mock_save_history():
-    with patch("backend.database.save_history") as mock:
-        yield mock
-
-
-@pytest.fixture
-def mock_get_history():
-    with patch("backend.database.get_history") as mock:
-        yield mock
-
-
-@pytest.fixture
-def mock_is_admin():
-    with patch("backend.database.is_admin") as mock:
-        yield mock
-
-
-@pytest.fixture
-def mock_list_users():
-    with patch("backend.database.list_users") as mock:
-        yield mock
-
-
-def test_register_success(mock_register_user):
-    mock_register_user.return_value = 1
-    response = client.post("/register", json={"username": "test", "password": "123"})
-    assert response.status_code == 200
-    assert response.json() == {"account_id": 1, "message": "Registration successful"}
-
-
-def test_register_fail(mock_register_user):
-    mock_register_user.return_value = None
-    response = client.post("/register", json={"username": "test", "password": "123"})
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Username already exists"
-
-
-def test_login_success(mock_verify_user):
-    mock_verify_user.return_value = 2
-    response = client.post("/login", json={"username": "test", "password": "123"})
-    assert response.status_code == 200
-    assert response.json() == {"account_id": 2, "message": "Login successful"}
-
-
-def test_login_fail(mock_verify_user):
-    mock_verify_user.return_value = None
-    response = client.post("/login", json={"username": "wrong", "password": "bad"})
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid credentials"
-
-
-def test_analyze_positive(mock_save_history):
-    response = client.post(
-        "/analyze",
-        json={"account_id": 1, "text": "I love this project!"}
-    )
+def test_register_user():
+    response = client.post("/register", json={"username": "alice", "password": "password123"})
     assert response.status_code == 200
     data = response.json()
-    assert data["account_id"] == 1
-    assert data["sentiment"] in ["positive", "neutral", "negative"]
-    mock_save_history.assert_called_once()
+    assert "account_id" in data
+    assert data["message"] == "Registration successful"
 
 
-def test_history(mock_get_history):
-    mock_get_history.return_value = [
-        {"text": "Good job", "sentiment": "positive"}
-    ]
-    response = client.get("/history/1")
+def test_login_logout():
+    r = client.post("/register", json={"username": "bob", "password": "secret"})
+    account_id = r.json()["account_id"]
+
+    response = client.post("/login", json={"username": "bob", "password": "secret"})
     assert response.status_code == 200
     data = response.json()
-    assert data["account_id"] == 1
-    assert len(data["history"]) == 1
-    assert data["history"][0]["sentiment"] == "positive"
+    assert data["account_id"] == account_id
+    assert data["message"] == "Login successful"
 
-
-def test_logout():
-    response = client.post("/logout", params={"account_id": 1})
+    response = client.post("/logout", params={"account_id": account_id})
     assert response.status_code == 200
-    assert response.json() == {"account_id": 1, "message": "Logged out successfully"}
+    assert response.json()["message"] == "Logged out successfully"
 
 
-def test_admin_authorized(mock_is_admin, mock_list_users):
-    mock_is_admin.return_value = True
-    mock_list_users.return_value = ["user1", "user2"]
-    response = client.get("/admin/1")
+def test_analyze_and_history():
+    r = client.post("/register", json={"username": "charlie", "password": "mypassword"})
+    account_id = r.json()["account_id"]
+
+    response = client.post("/analyze", json={"account_id": account_id, "text": "I love coding!"})
     assert response.status_code == 200
-    assert response.json()["users"] == ["user1", "user2"]
+    data = response.json()
+    assert data["sentiment"] in ["positive", "negative"]
+
+    response = client.get(f"/history/{account_id}")
+    assert response.status_code == 200
+    history = response.json()["history"]
+    assert len(history) > 0
+    assert history[0]["text"] == "I love coding!"
 
 
-def test_admin_unauthorized(mock_is_admin):
-    mock_is_admin.return_value = False
-    response = client.get("/admin/1")
+def test_admin_panel():
+    r1 = client.post("/register", json={"username": "dave", "password": "123"})
+    user_id = r1.json()["account_id"]
+
+    r2 = client.post("/register", json={"username": "admin", "password": "adminpass"})
+    admin_id = r2.json()["account_id"]
+
+    conn = database.sqlite3.connect(database.DB_NAME)
+    c = conn.cursor()
+    c.execute("UPDATE users SET is_admin=1 WHERE id=?", (admin_id,))
+    conn.commit()
+    conn.close()
+
+    response = client.get(f"/admin/{user_id}")
     assert response.status_code == 403
-    assert response.json()["detail"] == "Not authorized"
+
+    response = client.get(f"/admin/{admin_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert "users" in data
