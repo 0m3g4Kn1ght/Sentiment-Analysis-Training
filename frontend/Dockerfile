@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY frontend/requirements.txt ./frontend/requirements.txt
+COPY requirements.txt ./frontend/requirements.txt
 RUN pip install --no-cache-dir -r frontend/requirements.txt
 
 COPY . ./frontend
