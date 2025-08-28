@@ -77,5 +77,4 @@ def list_users():
     conn.close()
     return [{"id": r[0], "username": r[1], "is_admin": bool(r[2])} for r in rows]
 
-# Initialize tables
 init_db()

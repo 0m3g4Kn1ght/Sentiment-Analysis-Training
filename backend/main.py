@@ -4,7 +4,6 @@ import backend.database as database
 
 app = FastAPI()
 
-# ---------- Models ----------
 class RegisterInput(BaseModel):
     username: str
     password: str
@@ -18,7 +17,6 @@ class AnalyzeInput(BaseModel):
     text: str
 
 
-# ---------- Endpoints ----------
 @app.post("/register")
 def register(user: RegisterInput):
     account_id = database.register_user(user.username, user.password)
@@ -50,7 +48,6 @@ def history(account_id: int):
 
 @app.post("/logout")
 def logout(account_id: int):
-    # nothing to invalidate, just acknowledge
     return {"account_id": account_id, "message": "Logged out successfully"}
 
 
