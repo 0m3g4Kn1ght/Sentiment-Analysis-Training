@@ -1,4 +1,4 @@
-# frontend/Dockerfile
+# backend/Dockerfile
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -6,31 +6,33 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies required for pandas + streamlit
+# Install system dependencies needed for common pyproject.toml builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
+    gfortran \
+    libblas-dev \
+    liblapack-dev \
+    libatlas-base-dev \
     libffi-dev \
     libssl-dev \
     libpq-dev \
-    libbz2-dev \
-    liblzma-dev \
-    libsqlite3-dev \
     zlib1g-dev \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python packages
-COPY frontend/requirements.txt ./requirements.txt
+# Copy requirements first for caching
+COPY backend/requirements.txt ./requirements.txt
+
+# Upgrade pip to handle pyproject.toml
 RUN pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
+# Copy app source
 COPY . .
 
-EXPOSE 8501
+EXPOSE 8000
 
-# Run from frontend folder
-WORKDIR /app/frontend
-CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+# Start FastAPI app
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

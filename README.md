@@ -1,107 +1,103 @@
 # Sentiment Analysis App (FastAPI + Streamlit)
 
-This project is a **full-stack sentiment analysis application** built with:  
-- **FastAPI** → Backend REST API (sentiment analysis engine)  
-- **Streamlit** → Frontend UI  
-- **Docker Compose** → Container orchestration  
-- **GitHub Actions** → CI/CD automation  
+A full-stack sentiment analysis application featuring:
 
-It analyzes the sentiment of input text (e.g., tweets) using **VADER Sentiment Analysis** and classifies it as *positive, negative, or neutral*.  
+- **FastAPI** backend for sentiment evaluation using VADER  
+- **Streamlit** frontend for interactive user experience  
+- **Docker Compose** setup for seamless container orchestration  
+- **GitHub Actions** for CI/CD automation
 
 ---
 
-## Project Structure
+##  Project Structure
+
 ```
 project-root/
-│── backend/                  # FastAPI backend
-│   ├── main.py               # Main FastAPI app
-│   ├── models.py             # Pydantic models
-│   ├── requirements.txt      # Backend dependencies
-│   └── Dockerfile            # Backend Dockerfile
-│
-│── frontend/                 # Streamlit frontend
-│   ├── app.py                # Main Streamlit app
-│   ├── requirements.txt      # Frontend dependencies
-│   └── Dockerfile            # Frontend Dockerfile
-│
-│── tests/                    # Pytest test cases
-│   └── test_backend.py       # Backend tests
-│
-│── docker-compose.yml        # Orchestration file
-│── .github/workflows/ci-cd.yml # GitHub Actions CI/CD workflow
+├── backend/
+│   ├── main.py           # FastAPI app logic
+│   ├── database.py       # SQLite helper functions and auth logic
+│   ├── models.py         # Pydantic data models
+│   ├── requirements.txt  # Backend Python dependencies
+│   └── Dockerfile        # Backend Docker configuration
+├── frontend/
+│   ├── app.py            # Streamlit app interface
+│   ├── requirements.txt  # Frontend Python dependencies
+│   └── Dockerfile        # Frontend Docker configuration
+├── tests/
+│   └── test_backend.py   # Pytest test suite for backend
+├── docker-compose.yml    # Orchestration of backend + frontend
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml     # GitHub Actions CI/CD workflow
+└── README.md             # This documentation
 ```
 
 ---
 
-## Backend (FastAPI)
+##  Features
 
-The backend provides a REST API for sentiment analysis.
+### Backend (FastAPI)
 
-### Run Backend Locally
+- **Endpoints**:
+  - `POST /register`: Register a new user and receive an `account_id`
+  - `POST /login`: Authenticate and get back `account_id`
+  - `POST /analyze`: Submit text (with `account_id`) to get sentiment and score details
+  - `GET /history/{account_id}`: Retrieve sentiment history for a given user
+  - `POST /logout`: Acknowledges "logout" (session-free simplified flow)
+  - `GET /admin/{account_id}`: Admin-only endpoint to list all registered users
+
+- **Authentication**:  
+  Based solely on `account_id`; no complex token system required.
+
+- **Persistence**:  
+  SQLite-based storage with tables for users and history.
+
+---
+
+##  Frontend (Streamlit)
+
+- A clean UI for users to enter text and receive live sentiment feedback.
+- Communicates with the backend via configured `BACKEND_URL` (either local or Docker network).
+
+---
+
+##  Local Development Setup
+
+### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-### API Endpoints
-- `GET /` → Health check  
-- `POST /analyze` → Accepts JSON `{ "text": "your sentence" }` and returns sentiment result  
+- **Test endpoint** via:
+  ```bash
+  curl -X POST http://127.0.0.1:8000/analyze        -H "Content-Type: application/json"        -d '{"account_id": 1, "text": "I love this!"}'
+  ```
 
-Example:
-```bash
-curl -X POST "http://127.0.0.1:8000/analyze"      -H "Content-Type: application/json"      -d '{"text": "I love FastAPI!"}'
-```
-
-Response:
-```json
-{
-  "text": "I love FastAPI!",
-  "sentiment": "positive",
-  "scores": {
-    "neg": 0.0,
-    "neu": 0.25,
-    "pos": 0.75,
-    "compound": 0.87
-  }
-}
-```
-
----
-
-## Frontend (Streamlit)
-
-The frontend provides a simple UI for entering text and viewing results.
-
-### Run Frontend Locally
+### Frontend
 ```bash
 cd frontend
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-It connects to the backend at `http://localhost:8000/analyze`.
-
 ---
 
-## Docker Setup
-
-Run both frontend and backend with Docker Compose:
+##  Containerized Workflow with Docker Compose
 
 ```bash
 docker-compose up --build
 ```
 
-- Backend → [http://localhost:8000](http://localhost:8000)  
-- Frontend → [http://localhost:8501](http://localhost:8501)  
-
-The frontend communicates with the backend via service name `backend`.
+- Visit **Backend** at: `http://localhost:8000`
+- Visit **Frontend** at: `http://localhost:8501`
 
 ---
 
-## Running Tests
+##  Testing
 
-Tests are written with **Pytest** for the backend.
+Run backend tests with **Pytest**:
 
 ```bash
 pytest tests/
@@ -109,20 +105,58 @@ pytest tests/
 
 ---
 
-## CI/CD (GitHub Actions)
+##  CI & CD (GitHub Actions)
 
-The workflow (`.github/workflows/ci-cd.yml`) runs automatically on push to `main`:  
-1. Install dependencies  
-2. Run tests  
-3. Build and push Docker images (if tests pass)  
+Triggered on pushes to `main`:
 
-Docker Hub credentials must be set in GitHub secrets.  
+1. Installs dependencies and runs tests
+2. Upon success, builds and pushes Docker images for backend and frontend
+
+Ensure you set up the following secrets in your repository for Docker image publishing:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN` (GitHub–or Docker Hub–generated token)
 
 ---
 
-## Tech Stack
-- **Backend:** FastAPI, VADER Sentiment  
-- **Frontend:** Streamlit  
-- **Testing:** Pytest  
-- **Containerization:** Docker & Docker Compose  
-- **CI/CD:** GitHub Actions  
+##  Tech Stack Summary
+
+| Layer     | Technology                    |
+|-----------|-------------------------------|
+| Backend   | Python, FastAPI, VADER         |
+| Frontend  | Python, Streamlit              |
+| Database  | SQLite (via `database.py`)     |
+| Container | Docker, Docker Compose         |
+| CI/CD     | GitHub Actions, Docker Hub     |
+| Testing   | Pytest                         |
+
+---
+
+##  Getting Started
+
+1. **Clone the repository**  
+   ```bash
+   git clone <repo-url>
+   cd Sentiment-Analysis-Training
+   ```
+
+2. **Set up the backend and frontend** (either locally per above instructions or via Docker Compose).
+
+3. **Run your tests**:
+   ```bash
+   pytest
+   ```
+
+4. **Deploy** using Docker or let GitHub handle it via CI/CD when you push updates.
+
+---
+
+##  License
+
+This project is open-source and distributed under the **Apache-2.0 License**. Find the full license terms in the `LICENSE` file.
+
+---
+
+##  Contributing
+
+Contributions are welcome—from bug reports to new features! Please fork the repo, branch your changes, and submit a pull request. Thanks for helping make this project better.
