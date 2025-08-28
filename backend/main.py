@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from backend import database
 
 app = FastAPI()
+analyzer = SentimentIntensityAnalyzer()  # initialize VADER once
 
 class RegisterInput(BaseModel):
     username: str
@@ -35,9 +37,22 @@ def login(user: LoginInput):
 
 @app.post("/analyze")
 def analyze(data: AnalyzeInput):
-    sentiment = "positive" if "love" in data.text.lower() else "negative"
+    scores = analyzer.polarity_scores(data.text)
+    compound = scores["compound"]
+
+    if compound >= 0.05:
+        sentiment = "positive"
+    elif compound <= -0.05:
+        sentiment = "negative"
+    else:
+        sentiment = "neutral"
+
     database.save_history(data.account_id, data.text, sentiment)
-    return {"account_id": data.account_id, "sentiment": sentiment}
+    return {
+        "account_id": data.account_id,
+        "sentiment": sentiment,
+        "scores": scores  # optional: return full VADER scores
+    }
 
 
 @app.get("/history/{account_id}")
