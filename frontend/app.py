@@ -2,13 +2,10 @@ import streamlit as st
 import requests
 import pandas as pd
 
-# Backend API base URL
 BASE_URL = "http://backend:8000"
 
-# ---- PAGE CONFIG ----
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="centered")
 
-# ---- CUSTOM DARK THEME CSS ----
 st.markdown(
     """
     <style>
@@ -81,7 +78,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---- SESSION STATE ----
 if "account_id" not in st.session_state:
     st.session_state.account_id = None
 if "is_admin" not in st.session_state:
@@ -90,7 +86,6 @@ if "page" not in st.session_state:
     st.session_state.page = "Login"
 
 
-# ---- PAGE ROUTING ----
 def login_page():
     st.markdown('<div class="title">Login</div>', unsafe_allow_html=True)
     username = st.text_input("Username")
@@ -102,7 +97,6 @@ def login_page():
             data = resp.json()
             st.session_state.account_id = data["account_id"]
             st.session_state.page = "Analyze"
-            # check admin
             try:
                 admin_check = requests.get(f"{BASE_URL}/admin/{st.session_state.account_id}")
                 st.session_state.is_admin = admin_check.status_code == 200
@@ -215,7 +209,6 @@ def admin_page():
         st.session_state.page = "Analyze"
 
 
-# ---- MAIN ----
 if st.session_state.page == "Login":
     login_page()
 elif st.session_state.page == "Register":

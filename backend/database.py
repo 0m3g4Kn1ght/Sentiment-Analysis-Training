@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_NAME = "test.db"
+DB_NAME = "users.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)

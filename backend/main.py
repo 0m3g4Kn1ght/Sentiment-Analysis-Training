@@ -4,7 +4,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from backend import database
 
 app = FastAPI()
-analyzer = SentimentIntensityAnalyzer()  # initialize VADER once
+analyzer = SentimentIntensityAnalyzer()
 
 class RegisterInput(BaseModel):
     username: str
@@ -51,7 +51,7 @@ def analyze(data: AnalyzeInput):
     return {
         "account_id": data.account_id,
         "sentiment": sentiment,
-        "scores": scores  # optional: return full VADER scores
+        "scores": scores 
     }
 
 

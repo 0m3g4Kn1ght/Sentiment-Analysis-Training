@@ -1,16 +1,12 @@
-# docker-compose.yml
 version: '3.9'
 services:
   backend:
     build:
       context: ./backend
-    # build using the Dockerfile in backend/
-    # (Compose will auto-detect if you point context to project root and Dockerfile path)
-    # But we set it explicitly for clarity:
+
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    # (Optional) persist SQLite DB; create the file locally first if you bind mount a file.
     # volumes:
     #   - ./backend/users.db:/app/backend/users.db
     restart: unless-stopped
@@ -22,7 +18,6 @@ services:
     ports:
       - "8501:8501"
     environment:
-      # This is key: frontend calls backend by service name on Docker network
       BACKEND_URL: "http://backend:8000"
     depends_on:
       - backend
