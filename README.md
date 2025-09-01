@@ -155,8 +155,3 @@ Ensure you set up the following secrets in your repository for Docker image publ
 
 This project is open-source and distributed under the **Apache-2.0 License**. Find the full license terms in the `LICENSE` file.
 
----
-
-##  Contributing
-
-Contributions are welcome—from bug reports to new features! Please fork the repo, branch your changes, and submit a pull request. Thanks for helping make this project better.
